@@ -2,9 +2,10 @@ from tkinter import *
 from tkinter import messagebox
 from tkinter.ttk import *
 from datetime import datetime
+import Settings_window
 
 def click_btn():
-    windowSet.mainloop()
+    show(Settings_window)
 
 
 
