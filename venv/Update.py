@@ -1,9 +1,25 @@
-from datetime import datetime, timedelta
-import main_Window
+import tkinter as tk
 
-def Update_Window (upd_time, list_rates):
-    dic_rates = dict(zip([1,2,3,4,5],['EUR','USD','GBR','JPY','CNY']))
-    req_time = datetime.now()+ timedelta(minutes = upd_time)
-    req_time = req_time.strftime("%H:%M:%S")
-    lbl_time['text'] = "Следующее обновление в "+req_time
-    a = dic_rates[1]
+class Application(tk.Frame):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.master = master
+        self.pack()
+        self.create_widgets()
+
+    def create_widgets(self):
+        self.hi_there = tk.Button(self)
+        self.hi_there["text"] = "Hello World\n(click me)"
+        self.hi_there["command"] = self.say_hi
+        self.hi_there.pack(side="top")
+
+        self.quit = tk.Button(self, text="QUIT", fg="red",
+                              command=self.master.destroy)
+        self.quit.pack(side="bottom")
+
+    def say_hi(self):
+        print("hi there, everyone!")
+
+root = tk.Tk()
+app = Application(master=root)
+app.mainloop()

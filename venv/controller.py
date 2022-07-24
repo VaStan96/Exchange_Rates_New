@@ -3,6 +3,37 @@ from tkinter.ttk import *
 from datetime import datetime, timedelta
 import scrapp
 
+global req_time, rates, str_rates
+
+
+class MainWindow(Tk):
+    def __init__(self, req_time, rates, str_rates):
+        self.title("Актуальные курсы валют")
+        self.geometry('400x250')
+        self.req_time = req_time
+        self.str_rates = str_rates
+
+        frm1 = Frame(self,relief=RAISED, borderwidth=5)
+        frm1.pack(fill=BOTH, expand=True)
+
+        frm2 = Frame(self,relief=RAISED, borderwidth=5)
+        frm2.pack_propagate(False)
+        frm2.pack(fill=BOTH, expand=True, side=BOTTOM)
+
+        lbl = Label(frm1, text=str_rates, font="TimesNewRoman, 16")
+        lbl.pack(side=LEFT, anchor=NW)
+
+        img = PhotoImage(file=r"C:\Users\vasta\PycharmProjects\Exchange_Rates\gear.png")
+
+        btn = Button(frm1, image=img, command=open_settings)
+        #btn = Button(frm1, text='Set', command=self.open_settings)
+        btn.pack(side=RIGHT, anchor=NE)
+
+        lbl_time = Label(frm2, text='Следующее обновление в ' + req_time, font="TimesNewRoman, 12")
+        lbl_time.pack(side=LEFT, anchor=SW)
+
+
+
 class SettingsWindow(Tk):
     def __init__(self, req_time, rates, str_rates):
         self.title("Настройки")
@@ -61,14 +92,30 @@ class SettingsWindow(Tk):
         rates = tink_rates(rates)
         for elem,val in rates:
             str_rates+= "1 "+elem+" = "+val+" RUB\n"
-        print("__")
-        # windowSet.destroy()
-        # Update_Window(upd_time, rates)
-        # return req_time, rates
+
+        #close_settings(req_time, str_rates)
+
+def tink_rates(rates):
+    dic = {}
+    for elem in rates:
+        dic[elem] = 100
+    return dic
+
+def open_settings(req_time, rates, str_rates):
+    app.destroy()
+    window = SettingsWindow(req_time, rates, str_rates)
+    window.mainloop()
+
+def close_settings():
+    window.destroy()
+    main()
+
+def main (req_time, rates, str_rates):
+    app = MainWindow(req_time, rates, str_rates)
+    app.mainloop()
 
 if __name__ == '__main__':
     req_time = datetime.now().strftime("%H:%M:%S")
     str_rates = "Пусто"
     rates = []
-    app = SettingsWindow(req_time, rates, str_rates)
-    app.mainloop()
+    main(req_time, rates, str_rates)
