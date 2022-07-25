@@ -3,39 +3,10 @@ from tkinter.ttk import *
 from datetime import datetime, timedelta
 import scrapp
 
-global req_time, rates, str_rates
+class SettingsWindow(Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
 
-
-class MainWindow(Tk):
-    def __init__(self, req_time, rates, str_rates):
-        self.title("Актуальные курсы валют")
-        self.geometry('400x250')
-        self.req_time = req_time
-        self.str_rates = str_rates
-
-        frm1 = Frame(self,relief=RAISED, borderwidth=5)
-        frm1.pack(fill=BOTH, expand=True)
-
-        frm2 = Frame(self,relief=RAISED, borderwidth=5)
-        frm2.pack_propagate(False)
-        frm2.pack(fill=BOTH, expand=True, side=BOTTOM)
-
-        lbl = Label(frm1, text=str_rates, font="TimesNewRoman, 16")
-        lbl.pack(side=LEFT, anchor=NW)
-
-        img = PhotoImage(file=r"C:\Users\vasta\PycharmProjects\Exchange_Rates\gear.png")
-
-        btn = Button(frm1, image=img, command=open_settings)
-        #btn = Button(frm1, text='Set', command=self.open_settings)
-        btn.pack(side=RIGHT, anchor=NE)
-
-        lbl_time = Label(frm2, text='Следующее обновление в ' + req_time, font="TimesNewRoman, 12")
-        lbl_time.pack(side=LEFT, anchor=SW)
-
-
-
-class SettingsWindow(Tk):
-    def __init__(self, req_time, rates, str_rates):
         self.title("Настройки")
         self.geometry('400x250')
 
@@ -45,27 +16,29 @@ class SettingsWindow(Tk):
         frm_rates = LabelFrame(frm, text="Выберите валюту", relief=RIDGE)
         frm_rates.grid(row=0, column=0, sticky=W, padx=20, pady=20)
 
-        self.eur = IntVar()
-        self.eur.set(1)
-        self.usd = IntVar()
-        self.usd.set(0)
-        self.gbr = IntVar()
-        self.gbr.set(-1)
-        self.jpy = IntVar()
-        self.jpy.set(-2)
-        self.cny = IntVar()
-        self.cny.set(-3)
+        self.eur = StringVar()
+        self.eur.set("EUR")
+        self.usd = StringVar()
+        self.usd.set("")
+        self.gbp = StringVar()
+        self.gbp.set("")
+        self.jpy = StringVar()
+        self.jpy.set("")
+        self.cny = StringVar()
+        self.cny.set("")
 
-        eurCB = Checkbutton(frm_rates, text='EUR', var=self.eur, onvalue=1, offvalue=0).pack(anchor=W)
-        usdCB = Checkbutton(frm_rates, text='USD', var=self.usd, onvalue=2, offvalue=0).pack(anchor=W)
-        gbrCB = Checkbutton(frm_rates, text='GBR', var=self.gbr, onvalue=3, offvalue=0).pack(anchor=W)
-        jpyCB = Checkbutton(frm_rates, text='JPY', var=self.jpy, onvalue=4, offvalue=0).pack(anchor=W)
-        cnyCB = Checkbutton(frm_rates, text='CNY', var=self.cny, onvalue=5, offvalue=0).pack(anchor=W)
+        eurCB = Checkbutton(frm_rates, text='EUR', var=self.eur, onvalue='EUR', offvalue="").pack(anchor=W)
+        usdCB = Checkbutton(frm_rates, text='USD', var=self.usd, onvalue='USD', offvalue="").pack(anchor=W)
+        gbrCB = Checkbutton(frm_rates, text='GBP', var=self.gbp, onvalue='GBP', offvalue="").pack(anchor=W)
+        jpyCB = Checkbutton(frm_rates, text='JPY', var=self.jpy, onvalue='JPY', offvalue="").pack(anchor=W)
+        cnyCB = Checkbutton(frm_rates, text='CNY', var=self.cny, onvalue='CNY', offvalue="").pack(anchor=W)
 
         frm_update = LabelFrame(frm, text="Выберите частоту обновления", relief=RIDGE)
         frm_update.grid(row=0, column=1, sticky=E, padx=20, pady=20)
 
-        comb = Combobox(frm_update)
+        self.combVar = StringVar()
+        self.combVar.set('')
+        comb = Combobox(frm_update, textvariable=self.combVar)
         comb['values'] = ("5 минут", "15 минут", "30 минут", "1 час", "2 часа")
         comb.current(0)
         comb.pack()
@@ -78,44 +51,64 @@ class SettingsWindow(Tk):
 
     def click_save(self):
         dic = dict(zip(["5 минут", "15 минут", "30 минут", "1 час", "2 часа"], [5, 15, 30, 60, 120]))
-        self.a = comb.get()
-        req_time = datetime.now() + timedelta(minutes=dic[a])
-        req_time = req_time.strftime("%H:%M:%S")
+        self.master.req_time = datetime.now() + timedelta(minutes=dic[self.combVar.get()])
+        MainWindow.update_time = self.master.req_time
+        self.master.req_time = self.master.req_time.strftime("%H:%M")
+
 
         rates = []
-        for i in (eur, usd, gbr, jpy, cny):
-            if i.get() > 0:
+        for i in (self.eur, self.usd, self.gbp, self.jpy, self.cny):
+            if i.get() != "":
                 rates.append(i.get())
-        dic_rates = dict(zip([1, 2, 3, 4, 5], ['EUR', 'USD', 'GBR', 'JPY', 'CNY']))
-        for elem in rates:
-            elem = dic_rates[elem]
-        rates = tink_rates(rates)
-        for elem,val in rates:
-            str_rates+= "1 "+elem+" = "+val+" RUB\n"
+        MainWindow.rates = rates
+        rates = scrapp.Req(rates)
+        self.master.str_rates = ""
+        for elem,val in rates.items():
+            self.master.str_rates+= "1 "+elem+" = "+str(val)+" RUB\n"
 
-        #close_settings(req_time, str_rates)
+        self.master.lbl.config(text = self.master.str_rates)
+        self.master.lbl_time.config(text='Следующее обновление в ' + self.master.req_time)
+        self.destroy()
 
-def tink_rates(rates):
-    dic = {}
-    for elem in rates:
-        dic[elem] = 100
-    return dic
+class MainWindow(Tk):
+    req_time = datetime.now().strftime("%H:%M")
+    str_rates = "Выберите валюты"
+    update_time = datetime.now().strftime("%H:%M")
+    rates=[]
 
-def open_settings(req_time, rates, str_rates):
-    app.destroy()
-    window = SettingsWindow(req_time, rates, str_rates)
-    window.mainloop()
+    def __init__(self):
+        super().__init__()
 
-def close_settings():
-    window.destroy()
-    main()
+        self.title("Актуальные курсы валют")
+        self.geometry('400x250')
+        self.req_time = datetime.now().strftime("%H:%M")
+        self.str_rates = "Выберите валюты"
 
-def main (req_time, rates, str_rates):
-    app = MainWindow(req_time, rates, str_rates)
-    app.mainloop()
+        frm1 = Frame(self,relief=RAISED, borderwidth=5)
+        frm1.pack(fill=BOTH, expand=True)
+
+        frm2 = Frame(self,relief=RAISED, borderwidth=5)
+        frm2.pack_propagate(False)
+        frm2.pack(fill=BOTH, expand=True, side=BOTTOM)
+
+        self.lbl = Label(frm1, text=self.str_rates, font="TimesNewRoman, 16")
+        self.lbl.pack(side=LEFT, anchor=NW)
+
+        self.photo = PhotoImage(file=r"C:\Users\vasta\PycharmProjects\Exchange_Rates\gear.png")
+
+        btn = Button(frm1, image=self.photo, command=self.open_settings)
+        #btn = Button(frm1, text='Set', command=self.open_settings)
+        btn.pack(side=RIGHT, anchor=NE)
+
+        self.lbl_time = Label(frm2, text='Следующее обновление в ' + self.req_time, font="TimesNewRoman, 12")
+        self.lbl_time.pack(side=LEFT, anchor=SW)
+
+    def open_settings(self):
+        window = SettingsWindow(self)
+        window.grab_set()
+
+
 
 if __name__ == '__main__':
-    req_time = datetime.now().strftime("%H:%M:%S")
-    str_rates = "Пусто"
-    rates = []
-    main(req_time, rates, str_rates)
+    app = MainWindow()
+    app.mainloop()

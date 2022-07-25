@@ -1,25 +1,41 @@
-import tkinter as tk
+from tkinter import *
 
-class Application(tk.Frame):
-    def __init__(self, master=None):
-        super().__init__(master)
+
+class GUI(Frame):
+
+
+    def __init__(self, master, *args, **kwargs):
+        Frame.__init__(self, master, *args, **kwargs)
+
         self.master = master
-        self.pack()
-        self.create_widgets()
+        self.my_frame = Frame(self.master)
+        self.my_frame.pack()
 
-    def create_widgets(self):
-        self.hi_there = tk.Button(self)
-        self.hi_there["text"] = "Hello World\n(click me)"
-        self.hi_there["command"] = self.say_hi
-        self.hi_there.pack(side="top")
+        self.button1 = Button(self.master, text="Open New Window",
+                              command = open_toplevel_window)
+        self.button1.pack()
 
-        self.quit = tk.Button(self, text="QUIT", fg="red",
-                              command=self.master.destroy)
-        self.quit.pack(side="bottom")
+        self.text = Text(self.master, width = 20, height = 3)
+        self.text.pack()
+        self.text.insert(END, "Before\ntop window\ninteraction")
 
-    def say_hi(self):
-        print("hi there, everyone!")
+class open_toplevel_window(Toplevel):
 
-root = tk.Tk()
-app = Application(master=root)
-app.mainloop()
+
+    def __init__(self, *args, **kwargs):
+        Toplevel.__init__(self, *args, **kwargs)
+        self.grab_set()
+
+        def replace_text():
+            app.text.delete(1.0, END)
+            app.text.insert(END, "Text From\nToplevel")
+
+        top_button = Button(self, text = "Replace text in main window",
+                            command = replace_text)
+        top_button.pack()
+
+
+if __name__ == "__main__":
+    root = Tk()
+    app = GUI(root)
+    root.mainloop()
