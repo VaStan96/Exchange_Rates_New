@@ -2,6 +2,9 @@ from tkinter import *
 from tkinter.ttk import *
 from datetime import datetime, timedelta
 import scrapp
+import threading, schedule, time
+from pystray import MenuItem, Menu, Icon
+from PIL import Image
 
 class SettingsWindow(Toplevel):
     def __init__(self, parent):
@@ -52,9 +55,9 @@ class SettingsWindow(Toplevel):
     def click_save(self):
         dic = dict(zip(["5 минут", "15 минут", "30 минут", "1 час", "2 часа"], [5, 15, 30, 60, 120]))
         self.master.req_time = datetime.now() + timedelta(minutes=dic[self.combVar.get()])
-        MainWindow.update_time = self.master.req_time
         self.master.req_time = self.master.req_time.strftime("%H:%M")
-
+        MainWindow.update_time = self.master.req_time
+        MainWindow.update_minute = dic[self.combVar.get()]
 
         rates = []
         for i in (self.eur, self.usd, self.gbp, self.jpy, self.cny):
@@ -69,20 +72,24 @@ class SettingsWindow(Toplevel):
         self.master.lbl.config(text = self.master.str_rates)
         self.master.lbl_time.config(text='Следующее обновление в ' + self.master.req_time)
         self.destroy()
+        Update(self.master.lbl, self.master.lbl_time)
+
 
 class MainWindow(Tk):
     req_time = datetime.now().strftime("%H:%M")
     str_rates = "Выберите валюты"
-    update_time = datetime.now().strftime("%H:%M")
-    rates=[]
+    update_time = datetime.now() + timedelta(minutes=3)
+    update_time = update_time.strftime("%H:%M")
+    rates=['EUR']
+    update_minute = 3
 
     def __init__(self):
         super().__init__()
 
         self.title("Актуальные курсы валют")
         self.geometry('400x250')
-        self.req_time = datetime.now().strftime("%H:%M")
-        self.str_rates = "Выберите валюты"
+        #self.req_time = datetime.now().strftime("%H:%M")
+        #self.str_rates = "Выберите валюты"
 
         frm1 = Frame(self,relief=RAISED, borderwidth=5)
         frm1.pack(fill=BOTH, expand=True)
@@ -91,24 +98,56 @@ class MainWindow(Tk):
         frm2.pack_propagate(False)
         frm2.pack(fill=BOTH, expand=True, side=BOTTOM)
 
-        self.lbl = Label(frm1, text=self.str_rates, font="TimesNewRoman, 16")
+        self.lbl = Label(frm1, text=MainWindow.str_rates, font="TimesNewRoman, 16")
         self.lbl.pack(side=LEFT, anchor=NW)
 
         self.photo = PhotoImage(file=r"C:\Users\vasta\PycharmProjects\Exchange_Rates\gear.png")
 
+        self.lbl_time = Label(frm2, text='Следующее обновление в ' + MainWindow.req_time, font="TimesNewRoman, 12")
+        self.lbl_time.pack(side=LEFT, anchor=SW)
+
+        thr1 = threading.Thread(target=Update, args=(self.lbl, self.lbl_time)).start()
+
         btn = Button(frm1, image=self.photo, command=self.open_settings)
-        #btn = Button(frm1, text='Set', command=self.open_settings)
         btn.pack(side=RIGHT, anchor=NE)
 
-        self.lbl_time = Label(frm2, text='Следующее обновление в ' + self.req_time, font="TimesNewRoman, 12")
-        self.lbl_time.pack(side=LEFT, anchor=SW)
 
     def open_settings(self):
         window = SettingsWindow(self)
         window.grab_set()
 
+def quit_window(icon, item):
+    icon.stop()
+    app.destroy()
 
+
+def show_window(icon, item):
+    icon.stop()
+    app.after(0, app.deiconify)
+
+
+def withdraw_window():
+    app.withdraw()
+    image = Image.open(r"C:\Users\vasta\PycharmProjects\Exchange_Rates\acc.ico")
+    icon = Icon('main', image, 'Курс валют', menu=Menu(MenuItem('Показать', show_window), MenuItem('Закрыть', quit_window)))
+    icon.run()
+
+def Update(lbl, lbl_time):
+    MainWindow.rates = scrapp.Req(MainWindow.rates)
+    MainWindow.str_rates = ""
+    for elem, val in MainWindow.rates.items():
+        MainWindow.str_rates += "1 " + elem + " = " + str(val) + " RUB\n"
+
+    lbl.config(text=MainWindow.str_rates)
+    MainWindow.req_time = MainWindow.update_time
+    lbl_time.config(text='Следующее обновление в ' + MainWindow.req_time)
+    # schedule.every(MainWindow.update_minute).minutes.do(Update)
+    print('up')
+    # while True:
+    #    schedule.run_pending()
+    #    time.sleep(1)
 
 if __name__ == '__main__':
     app = MainWindow()
+    app.protocol("WM_DELETE_WINDOW", withdraw_window)
     app.mainloop()

@@ -1,41 +1,28 @@
-from tkinter import *
+import tkinter as tk
+from PIL import Image
+from pystray import MenuItem, Menu, Icon
 
 
-class GUI(Frame):
+def quit_window(icon, item):
+    icon.stop()
+    root.destroy()
 
 
-    def __init__(self, master, *args, **kwargs):
-        Frame.__init__(self, master, *args, **kwargs)
-
-        self.master = master
-        self.my_frame = Frame(self.master)
-        self.my_frame.pack()
-
-        self.button1 = Button(self.master, text="Open New Window",
-                              command = open_toplevel_window)
-        self.button1.pack()
-
-        self.text = Text(self.master, width = 20, height = 3)
-        self.text.pack()
-        self.text.insert(END, "Before\ntop window\ninteraction")
-
-class open_toplevel_window(Toplevel):
+def show_window(icon, item):
+    icon.stop()
+    root.after(0, root.deiconify)
 
 
-    def __init__(self, *args, **kwargs):
-        Toplevel.__init__(self, *args, **kwargs)
-        self.grab_set()
-
-        def replace_text():
-            app.text.delete(1.0, END)
-            app.text.insert(END, "Text From\nToplevel")
-
-        top_button = Button(self, text = "Replace text in main window",
-                            command = replace_text)
-        top_button.pack()
+def withdraw_window():
+    root.withdraw()
+    image = Image.open(r"C:\Users\vasta\PycharmProjects\Exchange_Rates\acc.ico")
+    icon = Icon('main', image, 'Test', menu=Menu(MenuItem('Show', show_window), MenuItem('Quit', quit_window)))
+    icon.run()
 
 
-if __name__ == "__main__":
-    root = Tk()
-    app = GUI(root)
-    root.mainloop()
+root = tk.Tk()
+root.title('Test')
+root.geometry('320x240')
+root.resizable(False, False)
+root.protocol("WM_DELETE_WINDOW", withdraw_window)
+root.mainloop()
